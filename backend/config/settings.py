@@ -86,14 +86,19 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
+DB_HOST = config('DB_HOST', default='aws-0-ap-south-1.pooler.supabase.com')
+DB_PORT = config('DB_PORT', default=6543, cast=int)
+if 'pooler.supabase.com' in DB_HOST and DB_PORT == 5432:
+    DB_PORT = 6543
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': config('DB_NAME'),
-        'USER': config('DB_USER'),
-        'PASSWORD': config('DB_PASSWORD'),
-        'HOST': config('DB_HOST'),
-        'PORT': config('DB_PORT', default=5432, cast=int),
+        'NAME': config('DB_NAME', default='postgres'),
+        'USER': config('DB_USER', default='postgres.fcftzqaitfmvxmjbhpvp'),
+        'PASSWORD': config('DB_PASSWORD', default='Giftshop@2026'),
+        'HOST': DB_HOST,
+        'PORT': DB_PORT,
     }
 }
 
