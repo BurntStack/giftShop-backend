@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 from django.db.models import Q
 from django.utils.text import slugify
@@ -73,3 +74,30 @@ class ProductImage(models.Model):
 
     def __str__(self):
         return f'Image for {self.product.name}'
+
+
+class Wishlist(models.Model):
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='wishlist'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f'Wishlist({self.user})'
+
+
+class WishlistItem(models.Model):
+    wishlist = models.ForeignKey(Wishlist, on_delete=models.CASCADE, related_name='items')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='wishlist_items')
+    added_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['wishlist', 'product'], name='unique_wishlist_product'),
+        ]
+        indexes = [
+            models.Index(fields=['wishlist']),
+        ]
+
+    def __str__(self):
+        return f'{self.product.name} in {self.wishlist}'
