@@ -17,12 +17,29 @@ Including another URLconf
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
+from django.http import JsonResponse
 from django.urls import include, path
 
 from products.urls import wishlist_urlpatterns
 from products.views import CategoryListView
 
+def root_health_check(request):
+    return JsonResponse({
+        "status": "ok",
+        "message": "GiftShop API is live and running",
+        "endpoints": {
+            "products": "/api/products/",
+            "categories": "/api/categories/",
+            "cart": "/api/cart/",
+            "users": "/api/users/",
+            "wishlist": "/api/wishlist/",
+            "auth": "/api/auth/",
+            "admin": "/admin/",
+        }
+    })
+
 urlpatterns = [
+    path('', root_health_check, name='api-root'),
     path('admin/', admin.site.urls),
     path('api/auth/', include('authentication.urls')),
     path('api/products/', include('products.urls')),
