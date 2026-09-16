@@ -30,6 +30,13 @@ DEBUG = config('DEBUG', default=False, cast=bool)
 
 ALLOWED_HOSTS = ['*']
 
+# Behind Render/Heroku-style TLS-terminating proxies the app receives plain HTTP.
+# Trust the forwarded proto header so request.scheme (and therefore DRF's
+# paginated `next`/`previous` links) is built as https instead of http — otherwise
+# an https frontend blocks those links as mixed content and never loads page 2+.
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = True
+
 
 # Application definition
 
@@ -99,7 +106,15 @@ DATABASES = {
         'PASSWORD': config('DB_PASSWORD', default='Giftshop@2026'),
         'HOST': DB_HOST,
         'PORT': DB_PORT,
-        'CONN_MAX_AGE': 600,
+        # Reuse DB connections across requests instead of opening a fresh
+        # (cross-region, TLS + SCRAM) connection every time. This is the single
+        # biggest latency win: without it, each API request pays ~2s just to
+        # connect to the Supabase pooler before running any query.
+        'CONN_MAX_AGE': config('DB_CONN_MAX_AGE', default=600, cast=int),
+        'CONN_HEALTH_CHECKS': True,
+        # Required when talking to the Supabase transaction pooler (pgbouncer):
+        # server-side cursors aren't supported in transaction pooling mode.
+        'DISABLE_SERVER_SIDE_CURSORS': True,
     }
 }
 
@@ -158,7 +173,11 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated',
     ),
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 20,
+    # The storefront fetches the whole catalog and filters client-side, so a
+    # small page size just forces extra sequential round trips (48 products =
+    # 3 requests). A larger page returns everything in one request; clients can
+    # still page explicitly via ?page=N.
+    'PAGE_SIZE': config('API_PAGE_SIZE', default=100, cast=int),
 }
 
 SIMPLE_JWT = {

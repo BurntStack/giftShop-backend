@@ -1,12 +1,20 @@
 from django.core.management.base import BaseCommand
+from decouple import config
 
 from products.models import Category, Product, ProductImage
 
-LOCAL_MEDIA_BASE = 'http://localhost:8000/media/products/'
+# Base URL for the packaged product images. Defaults to the public Supabase
+# storage bucket that the storefront already serves these same files from, so
+# seeded products render correctly in production. Override with PRODUCT_MEDIA_BASE_URL
+# (e.g. http://localhost:8000/media/products/) for local development.
+MEDIA_BASE = config(
+    'PRODUCT_MEDIA_BASE_URL',
+    default='https://fcftzqaitfmvxmjbhpvp.supabase.co/storage/v1/object/public/product-images/',
+)
 
 
 def local(filename):
-    return LOCAL_MEDIA_BASE + filename
+    return MEDIA_BASE + filename
 
 
 CATEGORY_PRODUCTS = {

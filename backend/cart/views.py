@@ -25,8 +25,16 @@ class CartView(APIView):
         item, created = CartItem.objects.get_or_create(
             cart=cart, product=product, defaults={'quantity': quantity}
         )
+        desired_quantity = quantity if created else item.quantity + quantity
+        if desired_quantity > product.stock_quantity:
+            if created:
+                item.delete()
+            return Response(
+                {'detail': f'Only {product.stock_quantity} in stock.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         if not created:
-            item.quantity += quantity
+            item.quantity = desired_quantity
             item.save()
 
         return Response(CartSerializer(cart).data, status=status.HTTP_201_CREATED)
@@ -42,7 +50,13 @@ class CartItemView(APIView):
         serializer = UpdateCartItemSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         item = self.get_item(request, item_id)
-        item.quantity = serializer.validated_data['quantity']
+        quantity = serializer.validated_data['quantity']
+        if quantity > item.product.stock_quantity:
+            return Response(
+                {'detail': f'Only {item.product.stock_quantity} in stock.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        item.quantity = quantity
         item.save()
         return Response(CartSerializer(item.cart).data)
 
