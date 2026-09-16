@@ -1,5 +1,7 @@
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_control
 from rest_framework import status
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -15,6 +17,7 @@ from .serializers import (
 )
 
 
+@method_decorator(cache_control(public=True, max_age=300, s_maxage=600), name='dispatch')
 class ProductListView(ListAPIView):
     serializer_class = ProductSerializer
     permission_classes = [AllowAny]
@@ -56,6 +59,7 @@ class ProductListView(ListAPIView):
         return qs
 
 
+@method_decorator(cache_control(public=True, max_age=300, s_maxage=600), name='dispatch')
 class ProductDetailView(RetrieveAPIView):
     queryset = Product.objects.filter(is_active=True).select_related('category').prefetch_related('images')
     serializer_class = ProductSerializer
@@ -63,6 +67,7 @@ class ProductDetailView(RetrieveAPIView):
     lookup_field = 'slug'
 
 
+@method_decorator(cache_control(public=True, max_age=600, s_maxage=1800), name='dispatch')
 class CategoryListView(ListAPIView):
     queryset = Category.objects.filter(is_active=True)
     serializer_class = CategorySerializer

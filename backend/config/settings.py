@@ -99,6 +99,7 @@ DATABASES = {
         'PASSWORD': config('DB_PASSWORD', default='Giftshop@2026'),
         'HOST': DB_HOST,
         'PORT': DB_PORT,
+        'CONN_MAX_AGE': 600,
     }
 }
 
